@@ -16,7 +16,17 @@ from fitcoach.dataset import (  # noqa: E402
     LandmarkDataset,
     ClipEntry,
     scan_landmarks_dir,
+    exercise_from_stem,
 )
+
+
+def test_exercise_from_stem() -> None:
+    assert exercise_from_stem("squat") == "squat"
+    assert exercise_from_stem("squat_2") == "squat"
+    assert exercise_from_stem("pushup_alt") == "pushup"
+    assert exercise_from_stem("sample") is None
+    assert exercise_from_stem("warmup_3") is None
+    assert exercise_from_stem("") is None
 
 
 def _write_clip(path: Path, n_frames: int, *, fill: float = 0.5) -> None:
@@ -108,6 +118,22 @@ def test_scan_landmarks_dir_uses_filename_as_exercise(tmp_path: Path) -> None:
     entries = scan_landmarks_dir(tmp_path)
     names = sorted(e.exercise for e in entries)
     assert names == ["curl", "pushup", "squat"]
+
+
+def test_scan_landmarks_dir_groups_suffixed_clips(tmp_path: Path) -> None:
+    """Files like squat_2.npy, squat_3.npy share the 'squat' label."""
+    _write_clip(tmp_path / "squat.npy", 50)
+    _write_clip(tmp_path / "squat_2.npy", 50)
+    _write_clip(tmp_path / "squat_3.npy", 50)
+    _write_clip(tmp_path / "pushup_alt.npy", 50)
+    _write_clip(tmp_path / "curl.npy", 50)
+    _write_clip(tmp_path / "warmup_2.npy", 50)  # unknown prefix → skipped
+    entries = scan_landmarks_dir(tmp_path)
+    labels = sorted(e.exercise for e in entries)
+    assert labels == ["curl", "pushup", "squat", "squat", "squat"]
+    # Every entry's file stem must start with its exercise label.
+    for e in entries:
+        assert e.path.stem.split("_")[0] == e.exercise
 
 
 def test_unknown_exercise_raises() -> None:
