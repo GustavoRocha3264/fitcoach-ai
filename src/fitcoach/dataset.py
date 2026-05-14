@@ -90,6 +90,20 @@ class LandmarkDataset(Dataset):
         return x, y
 
 
+def clip_coverage(arr: np.ndarray) -> float:
+    """Fraction of frames where pose was detected.
+
+    A frame counts as "detected" if its landmark row is finite (the extractor
+    writes NaN for undetected frames). Empty clips report 0.0 so they're
+    treated like fully-failed detections by filters.
+    """
+    if arr.shape[0] == 0:
+        return 0.0
+    # The extractor writes whole-row NaN for missed frames, so checking the
+    # first landmark's x coordinate is enough to distinguish detected vs not.
+    return float(np.isfinite(arr[:, 0, 0]).mean())
+
+
 def exercise_from_stem(stem: str) -> str | None:
     """Map a filename stem to its exercise label, or None if not a known exercise.
 
@@ -103,15 +117,26 @@ def exercise_from_stem(stem: str) -> str | None:
     return prefix if prefix in EXERCISE_LABELS else None
 
 
-def scan_landmarks_dir(path: str | Path) -> list[ClipEntry]:
+def scan_landmarks_dir(
+    path: str | Path,
+    *,
+    min_coverage: float = 0.0,
+) -> list[ClipEntry]:
     """Build entries from a directory whose filenames carry the exercise label.
 
     See `exercise_from_stem` for the naming convention. Files whose prefix
-    isn't a known exercise are ignored.
+    isn't a known exercise are ignored. When `min_coverage > 0`, each
+    candidate clip is loaded and dropped if its pose-detection rate is below
+    the threshold (see `clip_coverage`).
     """
     out: list[ClipEntry] = []
     for p in sorted(Path(path).glob("*.npy")):
         label = exercise_from_stem(p.stem)
-        if label is not None:
-            out.append(ClipEntry(path=p, exercise=label))
+        if label is None:
+            continue
+        if min_coverage > 0.0:
+            arr = np.load(p, mmap_mode="r")
+            if clip_coverage(np.asarray(arr)) < min_coverage:
+                continue
+        out.append(ClipEntry(path=p, exercise=label))
     return out
