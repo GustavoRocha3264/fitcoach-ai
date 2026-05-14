@@ -8,8 +8,25 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fitcoach.pose import PoseDetector, PoseResult
+import pytest
+
+from fitcoach.pose import PoseDetector, PoseResult, MODEL_VARIANTS, model_path_for
 from fitcoach.drawing import draw_skeleton, blur_background
+
+
+def test_model_variants_table_covers_known_options() -> None:
+    assert set(MODEL_VARIANTS) == {"lite", "full", "heavy"}
+
+
+def test_model_path_for_known_variant_points_to_models_dir() -> None:
+    p = model_path_for("heavy")
+    assert p.name == "pose_landmarker_heavy.task"
+    assert p.parent.name == "models"
+
+
+def test_model_path_for_unknown_variant_raises() -> None:
+    with pytest.raises(ValueError, match="Unknown model variant"):
+        model_path_for("ultra")
 
 
 def test_detector_runs_on_blank_frame() -> None:

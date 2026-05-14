@@ -16,7 +16,60 @@ from fitcoach.dataset import (  # noqa: E402
     LandmarkDataset,
     ClipEntry,
     scan_landmarks_dir,
+    exercise_from_stem,
+    clip_coverage,
 )
+
+
+def _write_clip_with_nan(path: Path, n_frames: int, *, nan_every: int) -> None:
+    arr = np.full((n_frames, 33, 4), 0.5, dtype=np.float32)
+    for i in range(0, n_frames, nan_every):
+        arr[i] = np.nan
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.save(path, arr)
+
+
+def test_clip_coverage_all_finite() -> None:
+    arr = np.full((10, 33, 4), 0.5, dtype=np.float32)
+    assert clip_coverage(arr) == pytest.approx(1.0)
+
+
+def test_clip_coverage_all_nan() -> None:
+    arr = np.full((10, 33, 4), np.nan, dtype=np.float32)
+    assert clip_coverage(arr) == pytest.approx(0.0)
+
+
+def test_clip_coverage_half_nan() -> None:
+    arr = np.full((10, 33, 4), 0.5, dtype=np.float32)
+    arr[:5] = np.nan
+    assert clip_coverage(arr) == pytest.approx(0.5)
+
+
+def test_clip_coverage_empty_clip_is_zero() -> None:
+    arr = np.empty((0, 33, 4), dtype=np.float32)
+    assert clip_coverage(arr) == 0.0
+
+
+def test_scan_landmarks_dir_filters_low_coverage_clips(tmp_path: Path) -> None:
+    """min_coverage drops clips whose pose-detection rate is below threshold."""
+    _write_clip(tmp_path / "squat.npy", 50)  # 100% coverage
+    _write_clip_with_nan(tmp_path / "squat_2.npy", 50, nan_every=2)  # ~50% coverage
+    _write_clip(tmp_path / "pushup.npy", 50)
+    entries = scan_landmarks_dir(tmp_path, min_coverage=0.8)
+    names = sorted(e.path.stem for e in entries)
+    assert names == ["pushup", "squat"]
+    # Without the filter, all three would be returned.
+    entries_all = scan_landmarks_dir(tmp_path)
+    assert len(entries_all) == 3
+
+
+def test_exercise_from_stem() -> None:
+    assert exercise_from_stem("squat") == "squat"
+    assert exercise_from_stem("squat_2") == "squat"
+    assert exercise_from_stem("pushup_alt") == "pushup"
+    assert exercise_from_stem("sample") is None
+    assert exercise_from_stem("warmup_3") is None
+    assert exercise_from_stem("") is None
 
 
 def _write_clip(path: Path, n_frames: int, *, fill: float = 0.5) -> None:
@@ -108,6 +161,22 @@ def test_scan_landmarks_dir_uses_filename_as_exercise(tmp_path: Path) -> None:
     entries = scan_landmarks_dir(tmp_path)
     names = sorted(e.exercise for e in entries)
     assert names == ["curl", "pushup", "squat"]
+
+
+def test_scan_landmarks_dir_groups_suffixed_clips(tmp_path: Path) -> None:
+    """Files like squat_2.npy, squat_3.npy share the 'squat' label."""
+    _write_clip(tmp_path / "squat.npy", 50)
+    _write_clip(tmp_path / "squat_2.npy", 50)
+    _write_clip(tmp_path / "squat_3.npy", 50)
+    _write_clip(tmp_path / "pushup_alt.npy", 50)
+    _write_clip(tmp_path / "curl.npy", 50)
+    _write_clip(tmp_path / "warmup_2.npy", 50)  # unknown prefix → skipped
+    entries = scan_landmarks_dir(tmp_path)
+    labels = sorted(e.exercise for e in entries)
+    assert labels == ["curl", "pushup", "squat", "squat", "squat"]
+    # Every entry's file stem must start with its exercise label.
+    for e in entries:
+        assert e.path.stem.split("_")[0] == e.exercise
 
 
 def test_unknown_exercise_raises() -> None:

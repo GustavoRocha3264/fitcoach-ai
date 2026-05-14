@@ -32,7 +32,29 @@ POSE_CONNECTIONS: frozenset[tuple[int, int]] = frozenset({
     (24, 26), (26, 28), (28, 30), (28, 32), (30, 32),
 })
 
-_DEFAULT_MODEL = Path(__file__).resolve().parents[2] / "models" / "pose_landmarker_full.task"
+# Apple-public model variants. `heavy` is the most accurate, `lite` the
+# fastest; `full` is the historical default. The variant determines the
+# .task filename and the upstream URL.
+MODEL_VARIANTS: dict[str, str] = {
+    "lite":  "pose_landmarker_lite.task",
+    "full":  "pose_landmarker_full.task",
+    "heavy": "pose_landmarker_heavy.task",
+}
+
+_MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
+
+
+def model_path_for(variant: str) -> Path:
+    """Resolve a variant name ("lite" / "full" / "heavy") to its on-disk path."""
+    if variant not in MODEL_VARIANTS:
+        raise ValueError(
+            f"Unknown model variant {variant!r}. "
+            f"Known: {sorted(MODEL_VARIANTS)}"
+        )
+    return _MODELS_DIR / MODEL_VARIANTS[variant]
+
+
+_DEFAULT_MODEL = model_path_for("full")
 
 
 @dataclass(frozen=True)
@@ -69,7 +91,8 @@ class PoseDetector:
     def __init__(
         self,
         *,
-        model_path: str | Path = _DEFAULT_MODEL,
+        model_variant: str | None = None,
+        model_path: str | Path | None = None,
         static_image_mode: bool = False,
         enable_segmentation: bool = True,
         num_poses: int = 1,
@@ -79,7 +102,11 @@ class PoseDetector:
         # accepted for API parity with the legacy wrapper; unused in Tasks API
         model_complexity: int = 1,
     ) -> None:
-        del model_complexity  # model variant is chosen via `model_path`
+        del model_complexity  # model variant is chosen via `model_variant` / `model_path`
+        if model_path is not None and model_variant is not None:
+            raise ValueError("Pass either model_variant or model_path, not both.")
+        if model_path is None:
+            model_path = model_path_for(model_variant) if model_variant else _DEFAULT_MODEL
         model_path = Path(model_path)
         if not model_path.exists():
             raise FileNotFoundError(

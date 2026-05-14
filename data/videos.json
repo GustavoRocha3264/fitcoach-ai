@@ -1,31 +1,49 @@
 {
-  "_comment": "Manifest of sample exercise videos. The fetcher skips entries with url:null (treated as locally-provided). 'source' fields are for attribution.",
+  "_comment": "Manifest of sample exercise videos. The fetcher skips entries with url:null (treated as locally-provided). 'source' fields are for attribution. File naming convention: <exercise>[_<n>].mp4 — scan_landmarks_dir groups all suffixed files under the same exercise label.",
   "videos": [
     {
       "name": "sample.mp4",
       "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4",
       "exercise": "smoke-test"
     },
-    {
-      "name": "squat.mp4",
-      "url": null,
-      "exercise": "squat",
+
+    { "name": "squat.mp4",   "url": null, "exercise": "squat",
       "source": "https://www.pexels.com/video/a-woman-in-activewear-doing-squats-at-home-8837221/",
-      "license": "Pexels License (free use)"
-    },
-    {
-      "name": "pushup.mp4",
-      "url": null,
-      "exercise": "pushup",
+      "license": "Pexels License (free use)" },
+    { "name": "squat_2.mp4", "url": null, "exercise": "squat",
+      "source": "https://pixabay.com/videos/id-18369/",
+      "license": "Pixabay Content License (CC0-like)" },
+    { "name": "squat_3.mp4", "url": null, "exercise": "squat",
+      "source": "https://www.pexels.com/video/6454275/",
+      "license": "Pexels License (free use)" },
+    { "name": "squat_4.mp4", "url": null, "exercise": "squat",
+      "source": "https://www.pexels.com/video/15079416/",
+      "license": "Pexels License (free use)" },
+
+    { "name": "pushup.mp4",   "url": null, "exercise": "pushup",
       "source": "https://pixabay.com/videos/press-ups-boy-sports-sweating-38959/",
-      "license": "Pixabay Content License (CC0-like)"
-    },
-    {
-      "name": "curl.mp4",
-      "url": null,
-      "exercise": "curl",
+      "license": "Pixabay Content License (CC0-like)" },
+    { "name": "pushup_2.mp4", "url": null, "exercise": "pushup",
+      "source": "https://www.pexels.com/video/6286173/",
+      "license": "Pexels License (free use)" },
+    { "name": "pushup_3.mp4", "url": null, "exercise": "pushup",
+      "source": "https://www.pexels.com/video/4367576/",
+      "license": "Pexels License (free use)" },
+    { "name": "pushup_4.mp4", "url": null, "exercise": "pushup",
+      "source": "https://www.pexels.com/video/4964649/",
+      "license": "Pexels License (free use)" },
+
+    { "name": "curl.mp4",   "url": null, "exercise": "curl",
       "source": "https://pixabay.com/videos/biceps-muscle-hard-training-29832/",
-      "license": "Pixabay Content License (CC0-like)"
-    }
+      "license": "Pixabay Content License (CC0-like)" },
+    { "name": "curl_2.mp4", "url": null, "exercise": "curl",
+      "source": "https://www.pexels.com/video/6293121/",
+      "license": "Pexels License (free use)" },
+    { "name": "curl_3.mp4", "url": null, "exercise": "curl",
+      "source": "https://www.pexels.com/video/4367577/",
+      "license": "Pexels License (free use)" },
+    { "name": "curl_4.mp4", "url": null, "exercise": "curl",
+      "source": "https://www.pexels.com/video/6547797/",
+      "license": "Pexels License (free use)" }
   ]
 }

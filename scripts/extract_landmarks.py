@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from fitcoach.extract import extract_landmarks_from_video, save_landmarks  # noqa: E402
-from fitcoach.dataset import EXERCISE_LABELS  # noqa: E402
+from fitcoach.dataset import exercise_from_stem  # noqa: E402
+from fitcoach.pose import MODEL_VARIANTS, PoseDetector  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +34,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="extract every .mp4, not just files whose stem matches a known exercise",
     )
+    p.add_argument(
+        "--model-variant",
+        choices=sorted(MODEL_VARIANTS),
+        default="full",
+        help="pose model accuracy/speed tradeoff (default: full — heavy is "
+             "stricter and yields worse coverage on cropped clips in practice)",
+    )
     return p.parse_args()
 
 
@@ -45,8 +53,12 @@ def main() -> int:
         print(f"No mp4 files in {args.videos}")
         return 1
 
+    print(f"Using model variant: {args.model_variant}")
+    # One fresh VIDEO-mode detector per clip: the tracker meaningfully boosts
+    # coverage within a clip, but state carrying across clips would bias the
+    # opening frames of each new clip.
     for video in videos:
-        if not args.include_unknown and video.stem not in EXERCISE_LABELS:
+        if not args.include_unknown and exercise_from_stem(video.stem) is None:
             print(f"  · skip {video.name} (not a known exercise)")
             continue
         target = args.out / f"{video.stem}.npy"
@@ -55,14 +67,16 @@ def main() -> int:
             continue
 
         t0 = time.perf_counter()
-        arr = extract_landmarks_from_video(video, max_frames=args.max_frames)
+        with PoseDetector(model_variant=args.model_variant, enable_segmentation=False) as det:
+            arr = extract_landmarks_from_video(video, detector=det, max_frames=args.max_frames)
         save_landmarks(arr, target)
         dt = time.perf_counter() - t0
         import numpy as np
         n_detected = int(np.isfinite(arr[:, 0, 0]).sum())
+        coverage = n_detected / max(arr.shape[0], 1)
         print(
             f"  → {video.name}: {arr.shape[0]} frames "
-            f"({n_detected} with pose)  {dt:.1f}s  → {target.name}"
+            f"({n_detected} with pose, {coverage:.0%})  {dt:.1f}s  → {target.name}"
         )
     return 0
 
