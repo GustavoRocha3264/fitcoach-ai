@@ -1,0 +1,47 @@
+name: fitcoach
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # Scientific core
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  # Vision / video
+  - opencv
+  # Build / C++ bindings
+  - cmake
+  - ninja
+  - pybind11
+  - clang-format
+  # Databases
+  - psycopg            # Postgres driver (v3)
+  - pymongo
+  - sqlalchemy
+  # Dev tooling
+  - jupyterlab
+  - ipykernel
+  - pytest
+  - pytest-cov
+  - ruff
+  - mypy
+  - pre-commit
+  # Misc
+  - python-dotenv
+  - tqdm
+  - rich
+  - pip
+  - pip:
+      # MediaPipe (pip-only on arm64)
+      - mediapipe
+      # PyTorch — MPS backend works out of the box on Apple Silicon
+      - torch
+      - torchvision
+      - torchaudio
+      # TensorFlow on Apple Silicon: pinned for tensorflow-metal 1.2.0 compatibility
+      - tensorflow==2.18.0
+      - tensorflow-metal==1.2.0
+      # Dashboard
+      - streamlit
