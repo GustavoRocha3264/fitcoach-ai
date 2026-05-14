@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fitcoach-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fitcoach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitcoach}
+      POSTGRES_DB: ${POSTGRES_DB:-fitcoach}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitcoach} -d ${POSTGRES_DB:-fitcoach}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    container_name: fitcoach-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-fitcoach}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-fitcoach}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-fitcoach}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  mongo_data:
