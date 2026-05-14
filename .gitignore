@@ -13,3 +13,8 @@ __pycache__/
 
 # Model weights — downloaded on demand; see src/fitcoach/pose.py for the URL.
 models/*.task
+
+# Trained classifier checkpoints and training history (reproducible from
+# scripts/train_model.py — not worth versioning).
+models/*.pt
+models/*.history.json
