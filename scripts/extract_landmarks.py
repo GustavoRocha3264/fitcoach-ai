@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from fitcoach.extract import extract_landmarks_from_video, save_landmarks  # noqa: E402
-from fitcoach.dataset import EXERCISE_LABELS  # noqa: E402
+from fitcoach.dataset import exercise_from_stem  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,7 +46,7 @@ def main() -> int:
         return 1
 
     for video in videos:
-        if not args.include_unknown and video.stem not in EXERCISE_LABELS:
+        if not args.include_unknown and exercise_from_stem(video.stem) is None:
             print(f"  · skip {video.name} (not a known exercise)")
             continue
         target = args.out / f"{video.stem}.npy"
